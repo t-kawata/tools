@@ -1,0 +1,52 @@
+#!node
+const fs = require('fs');
+const path = require('path');
+const fetch = require('node-fetch');
+const FormData = require('form-data');
+const wavFileInfo = require('wav-file-info');
+
+const argv = require('yargs/yargs')(process.argv.slice(2))
+    .option('d', {
+        alias: 'directory',
+        description: 'Directory path',
+        type: 'string',
+    })
+    .option('t', {
+        alias: 'target',
+        description: 'Target URL',
+        type: 'string',
+    })
+    .help()
+    .alias('help', 'h')
+    .argv;
+
+fs.readdir(argv.d, (err, files) => {
+    if (err) throw err;
+
+    files.forEach(file => {
+        if (path.extname(file) === '.wav') {
+            const filePath = path.join(argv.d, file);
+            wavFileInfo.infoByFilename(filePath, (err, info) => {
+                if (err) throw err;
+                if (info.header.sample_rate === 16000) {
+                    const form = new FormData();
+                    form.append('file', fs.createReadStream(filePath));
+                    form.append('temperature', '0.0');
+                    form.append('temperature_inc', '0.2');
+                    form.append('response_format', 'json');
+
+                    fetch(argv.t, {
+                        method: 'POST',
+                        body: form,
+                    })
+                    .then(response => response.json())
+                    .then(data => console.log(`<${file}>: `, JSON.stringify(data)))
+                    .catch(err => console.error(err));
+                } else {
+                    console.error(`${file} is not a 16kHz audio file.`);
+                }
+            });
+        }
+    });
+});
+

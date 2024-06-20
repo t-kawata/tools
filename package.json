@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "form-data": "^4.0.0",
+    "node-fetch": "^2.7.0",
+    "wav-file-info": "^0.0.10",
+    "yargs": "^17.7.2"
+  }
+}
